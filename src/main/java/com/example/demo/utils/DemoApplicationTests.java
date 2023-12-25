@@ -1,5 +1,5 @@
-// package com.example.demo.utils;
 //
+// import lombok.extern.slf4j.Slf4j;
 // import org.bouncycastle.asn1.gm.GMNamedCurves;
 // import org.bouncycastle.asn1.x9.X9ECParameters;
 // import org.bouncycastle.crypto.engines.SM2Engine;
@@ -14,7 +14,6 @@
 // import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 // import org.bouncycastle.jce.spec.ECPublicKeySpec;
 // import org.bouncycastle.util.encoders.Hex;
-// import org.testng.annotations.Test;
 //
 // import java.math.BigInteger;
 // import java.security.*;
@@ -23,49 +22,16 @@
 // /**
 //  * 国密
 //  */
+// @Slf4j
 // class DemoApplicationTests {
-//
-//     @Test
-//     void contextLoads() {
-//         testSM2();
-//     }
-//
-//     static void testSM2() {
-//         String publicKeyHex = null;
-//         String privateKeyHex = null;
-//         KeyPair keyPair = createECKeyPair();
-//         PublicKey publicKey = keyPair.getPublic();
-//         if (publicKey instanceof BCECPublicKey) {
-//             // 获取65字节非压缩缩的十六进制公钥串(0x04)
-//             publicKeyHex = Hex.toHexString(((BCECPublicKey) publicKey).getQ().getEncoded(false));
-//             System.out.println("---->SM2公钥：" + publicKeyHex);
-//         }
-//         PrivateKey privateKey = keyPair.getPrivate();
-//         if (privateKey instanceof BCECPrivateKey) {
-//             // 获取32字节十六进制私钥串
-//             privateKeyHex = ((BCECPrivateKey) privateKey).getD().toString(16);
-//             System.out.println("---->SM2私钥：" + privateKeyHex);
-//         }
-//
-//         // TODO...可对以上公钥进行分发传输
-//
-//         /**
-//          * 公钥加密
-//          */
-//         String data = "=========待加密数据=========";
-//         // 将十六进制公钥串转换为 BCECPublicKey 公钥对象
-//         BCECPublicKey bcecPublicKey = getECPublicKeyByPublicKeyHex(publicKeyHex);
-//         String encryptData = encrypt(bcecPublicKey, data, 1);
-//         System.out.println("---->加密结果：" + encryptData);
-//
-//         /**
-//          * 私钥解密
-//          */
-//         // 将十六进制私钥串转换为 BCECPrivateKey 私钥对象
-//         BCECPrivateKey bcecPrivateKey = getBCECPrivateKeyByPrivateKeyHex(privateKeyHex);
-//         data = decrypt(bcecPrivateKey, encryptData, 1);
-//         System.out.println("---->解密结果：" + data);
-//     }
+//     /**
+//      * 椭圆曲线ECParameters ASN.1 结构
+//      */
+//     private static X9ECParameters x9ECParameters = GMNamedCurves.getByName("sm2p256v1");
+//     /**
+//      * 椭圆曲线公钥或私钥的基本域参数
+//      */
+//     private static ECParameterSpec ecDomainParameters = new ECParameterSpec(x9ECParameters.getCurve(), x9ECParameters.getG(), x9ECParameters.getN());
 //
 //     /**
 //      * 生成密钥对
@@ -91,6 +57,18 @@
 //             e.printStackTrace();
 //             return null;
 //         }
+//     }
+//
+//     /**
+//      * 公钥加密
+//      *
+//      * @param publicKey 公钥
+//      * @param data      加密数据
+//      * @param modeType  加密模式
+//      * @return
+//      */
+//     public static String encrypt(String publicKey, String data, int modeType) {
+//         return encrypt(getECPublicKeyByPublicKeyHex(publicKey), data, modeType);
 //     }
 //
 //     /**
@@ -132,12 +110,24 @@
 //             // 通过加密引擎对字节数串行加密
 //             arrayOfBytes = sm2Engine.processBlock(in, 0, in.length);
 //         } catch (Exception e) {
-//             System.out.println("SM2加密时出现异常:" + e.getMessage());
+//             log.info("SM2加密时出现异常:{}", e.getMessage());
 //             e.printStackTrace();
 //         }
 //
 //         // 将加密后的字节串转换为十六进制字符串
 //         return Hex.toHexString(arrayOfBytes);
+//     }
+//
+//     /**
+//      * 私钥解密
+//      *
+//      * @param privateKey 私钥
+//      * @param cipherData 密文数据
+//      * @param modeType
+//      * @return
+//      */
+//     public static String decrypt(String privateKey, String cipherData, int modeType) {
+//         return decrypt(getBCECPrivateKeyByPrivateKeyHex(privateKey), cipherData, modeType);
 //     }
 //
 //     /**
@@ -179,16 +169,10 @@
 //             // 将解密后的字节串转换为utf8字符编码的字符串（需要与明文加密时字符串转换成字节串所指定的字符编码保持一致）
 //             result = new String(arrayOfBytes, "utf-8");
 //         } catch (Exception e) {
-//             System.out.println("SM2解密时出现异常" + e.getMessage());
+//             log.info("SM2解密时出现异常{}", e.getMessage());
 //         }
 //         return result;
 //     }
-//
-//
-//     // 椭圆曲线ECParameters ASN.1 结构
-//     private static X9ECParameters x9ECParameters = GMNamedCurves.getByName("sm2p256v1");
-//     // 椭圆曲线公钥或私钥的基本域参数。
-//     private static ECParameterSpec ecDomainParameters = new ECParameterSpec(x9ECParameters.getCurve(), x9ECParameters.getG(), x9ECParameters.getN());
 //
 //     /**
 //      * 公钥字符串转换为 BCECPublicKey 公钥对象
@@ -227,5 +211,40 @@
 //         ECPrivateKeySpec ecPrivateKeySpec = new ECPrivateKeySpec(d, ecDomainParameters);
 //         // 通过椭圆曲线私钥规范，创建出椭圆曲线私钥对象（可用于SM2解密和签名）
 //         return new BCECPrivateKey("EC", ecPrivateKeySpec, BouncyCastleProvider.CONFIGURATION);
+//     }
+//
+//     public static boolean verify(String privateKey, String content, String sign) {
+//         String encryptContent = decrypt(privateKey, sign, 1);
+//         if (!content.equals(encryptContent)) {
+//             return false;
+//         }
+//         return true;
+//     }
+//
+//     /**
+//      * 获取公私钥
+//      *
+//      * @return String[] 返回公私钥
+//      */
+//     public static String[] getKeys() {
+//         KeyPair ecKeyPair = createECKeyPair();
+//         PrivateKey privateKey = ecKeyPair.getPrivate();
+//         PublicKey publicKey = ecKeyPair.getPublic();
+//         String publicHex = Hex.toHexString(((BCECPublicKey) publicKey).getQ().getEncoded(false));
+//         String privateHex = ((BCECPrivateKey) privateKey).getD().toString(16);
+//         return new String[]{publicHex, privateHex};
+//     }
+//
+//     public static void main(String[] args) {
+//         String[] keys = getKeys();
+//         String publicKey = keys[0];
+//         String privateKey = keys[1];
+//         System.out.println(publicKey);
+//         System.out.println(privateKey);
+//         String sign = encrypt("043e9e993d5e0eb9f9a92808c88d9ab657e19560f394ff67b68f40f18c47165c170dacb937c08e042bf8e5d1302ce28bedd51c0925c1f9993b585044d6b43bf686", "sadas", 1);
+//         String decrypt = decrypt("9ede4b055debfbeeb88bf1113ea05a19c8a2123653a39b0a54cb116d5dd281c6", sign, 1);
+//         boolean res = verify("9ede4b055debfbeeb88bf1113ea05a19c8a2123653a39b0a54cb116d5dd281c6", "sadas", sign);
+//         System.out.println(res);
+//         System.out.println(decrypt);
 //     }
 // }
